@@ -15,7 +15,7 @@ import (
 	"github.com/KirillShchetinnikov/cyberpower-ups-exporter/internal/exporter"
 )
 
-const version = "0.1.0"
+const version = "1.0.0"
 
 func main() {
 	var (

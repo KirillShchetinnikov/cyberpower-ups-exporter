@@ -1,54 +1,56 @@
 # cyberpower-ups-exporter
 
-Prometheus exporter for CyberPower UPS devices managed by
+[English README](README.en.md)
+
+Prometheus exporter для ИБП CyberPower, которые управляются через
 [PowerPanel for Linux](https://www.cyberpower.com/ru/ru/product/sku/powerpanel_for_linux).
 
-The exporter runs the local `pwrstat` CLI, parses UPS status output, and exposes
-the values through the official Prometheus Go client library.
+Экспортёр запускает локальную команду `pwrstat`, разбирает статус ИБП и отдаёт
+метрики через официальную Go-библиотеку Prometheus.
 
-## Status
+## Статус
 
-MVP. The current implementation targets the common `pwrstat -status` output
-format and uses `github.com/prometheus/client_golang` for collection and HTTP
-exposition.
+Релиз 1.0. Текущая реализация рассчитана на распространённый формат вывода
+`pwrstat -status` и использует `github.com/prometheus/client_golang` для сбора и
+HTTP-публикации метрик.
 
-## Metrics
+## Метрики
 
-| Metric | Description |
+| Метрика | Описание |
 | --- | --- |
-| `cyberpower_ups_info` | Static UPS information labels. |
-| `cyberpower_ups_scrape_success` | `1` when the last `pwrstat` scrape succeeded. |
-| `cyberpower_ups_last_scrape_timestamp_seconds` | Unix timestamp of the scrape. |
-| `cyberpower_ups_on_battery` | `1` when UPS power source looks like battery power. |
-| `cyberpower_ups_battery_capacity_percent` | Battery charge percentage. |
-| `cyberpower_ups_remaining_runtime_seconds` | Estimated remaining runtime. |
-| `cyberpower_ups_utility_voltage_volts` | Utility input voltage. |
-| `cyberpower_ups_output_voltage_volts` | UPS output voltage. |
-| `cyberpower_ups_load_watts` | Current load in watts. |
-| `cyberpower_ups_load_percent` | Current load percentage. |
+| `cyberpower_ups_info` | Информационные labels по ИБП. |
+| `cyberpower_ups_scrape_success` | `1`, если последний запуск `pwrstat` завершился успешно. |
+| `cyberpower_ups_last_scrape_timestamp_seconds` | Unix timestamp последнего сбора. |
+| `cyberpower_ups_on_battery` | `1`, если ИБП работает от батареи. |
+| `cyberpower_ups_battery_capacity_percent` | Заряд батареи в процентах. |
+| `cyberpower_ups_remaining_runtime_seconds` | Оценка оставшегося времени работы в секундах. |
+| `cyberpower_ups_utility_voltage_volts` | Входное напряжение сети. |
+| `cyberpower_ups_output_voltage_volts` | Выходное напряжение ИБП. |
+| `cyberpower_ups_load_watts` | Текущая нагрузка в ваттах. |
+| `cyberpower_ups_load_percent` | Текущая нагрузка в процентах. |
 
-## Build
+## Сборка
 
 ```sh
 go build ./cmd/cyberpower-ups-exporter
 ```
 
-Requires Go 1.23 or newer.
+Требуется Go 1.23 или новее.
 
-## Run
+## Запуск
 
 ```sh
 ./cyberpower-ups-exporter
 ```
 
-Defaults:
+Значения по умолчанию:
 
-- listen address: `:9833`
-- metrics path: `/metrics`
-- PowerPanel command: `pwrstat -status`
-- scrape timeout: `5s`
+- адрес прослушивания: `:9833`
+- путь метрик: `/metrics`
+- команда PowerPanel: `pwrstat -status`
+- timeout сбора: `5s`
 
-Custom command example:
+Пример запуска с явными параметрами:
 
 ```sh
 ./cyberpower-ups-exporter \
@@ -58,20 +60,28 @@ Custom command example:
   --pwrstat-timeout=5s
 ```
 
-Scrape it:
+Проверка метрик:
 
 ```sh
 curl http://localhost:9833/metrics
 ```
 
-## Development
+## Grafana
+
+Готовый dashboard для Grafana находится в
+[`dashboards/grafana/cyberpower-ups-exporter.json`](dashboards/grafana/cyberpower-ups-exporter.json).
+
+Импортируйте JSON в Grafana и выберите Prometheus datasource, который собирает
+метрики этого экспортёра.
+
+## Разработка
 
 ```sh
 go test ./...
 ```
 
-## Notes
+## Примечания
 
-The exporter does not talk to UPS hardware directly. PowerPanel for Linux must
-be installed and `pwrstat -status` must work for the same user that runs the
-exporter.
+Экспортёр не обращается к ИБП напрямую. На хосте должен быть установлен
+PowerPanel for Linux, а команда `pwrstat -status` должна работать от имени
+пользователя, под которым запущен экспортёр.
