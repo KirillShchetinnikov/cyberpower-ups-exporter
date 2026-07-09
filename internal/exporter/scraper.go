@@ -14,32 +14,51 @@ import (
 )
 
 type Scraper struct {
-	command string
-	timeout time.Duration
+	statusCommand  string
+	configCommand  string
+	versionCommand string
+	timeout        time.Duration
 }
 
-func NewScraper(command string, timeout time.Duration) Scraper {
+func NewScraper(statusCommand string, configCommand string, versionCommand string, timeout time.Duration) Scraper {
 	return Scraper{
-		command: strings.TrimSpace(command),
-		timeout: timeout,
+		statusCommand:  strings.TrimSpace(statusCommand),
+		configCommand:  strings.TrimSpace(configCommand),
+		versionCommand: strings.TrimSpace(versionCommand),
+		timeout:        timeout,
 	}
 }
 
 func (s Scraper) Scrape(ctx context.Context) ScrapeResult {
 	when := time.Now()
-	output, err := s.run(ctx)
+	result := ScrapeResult{When: when}
+
+	statusOutput, err := s.run(ctx, s.statusCommand)
 	if err != nil {
-		return ScrapeResult{When: when, Err: err}
+		result.Err = err
+	} else {
+		result.Status = ParsePwrstat(statusOutput)
 	}
 
-	return ScrapeResult{
-		Status: ParsePwrstat(output),
-		When:   when,
+	configOutput, err := s.run(ctx, s.configCommand)
+	if err != nil {
+		result.ConfigErr = err
+	} else {
+		result.Config = ParsePwrstatConfig(configOutput)
 	}
+
+	versionOutput, err := s.run(ctx, s.versionCommand)
+	if err != nil {
+		result.VersionErr = err
+	} else {
+		result.PwrstatVersion = ParsePwrstatVersion(versionOutput)
+	}
+
+	return result
 }
 
-func (s Scraper) run(ctx context.Context) (string, error) {
-	parts := strings.Fields(s.command)
+func (s Scraper) run(ctx context.Context, command string) (string, error) {
+	parts := strings.Fields(command)
 	if len(parts) == 0 {
 		return "", errors.New("pwrstat command is empty")
 	}

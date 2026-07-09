@@ -5,12 +5,13 @@
 Prometheus exporter для ИБП CyberPower, которые управляются через
 [PowerPanel for Linux](https://www.cyberpower.com/ru/ru/product/sku/powerpanel_for_linux).
 
-Экспортёр запускает локальную команду `pwrstat`, разбирает статус ИБП и отдаёт
-метрики через официальную Go-библиотеку Prometheus.
+Экспортёр запускает локальные команды `pwrstat -status`, `pwrstat -config` и
+`pwrstat -version`, разбирает статус ИБП и настройки PowerPanel daemon, затем
+отдаёт метрики через официальную Go-библиотеку Prometheus.
 
 ## Статус
 
-Релиз 1.0. Текущая реализация рассчитана на распространённый формат вывода
+Релиз 1.1. Текущая реализация рассчитана на распространённый формат вывода
 `pwrstat -status` и использует `github.com/prometheus/client_golang` для сбора и
 HTTP-публикации метрик.
 
@@ -28,6 +29,23 @@ HTTP-публикации метрик.
 | `cyberpower_ups_output_voltage_volts` | Выходное напряжение ИБП. |
 | `cyberpower_ups_load_watts` | Текущая нагрузка в ваттах. |
 | `cyberpower_ups_load_percent` | Текущая нагрузка в процентах. |
+| `cyberpower_ups_pwrstat_info` | Версия установленной утилиты `pwrstat`. |
+| `cyberpower_ups_config_scrape_success` | `1`, если последний запуск `pwrstat -config` завершился успешно. |
+| `cyberpower_ups_version_scrape_success` | `1`, если последний запуск `pwrstat -version` завершился успешно. |
+| `cyberpower_ups_alarm_enabled` | Включена ли звуковая сигнализация ИБП в настройках PowerPanel. |
+| `cyberpower_ups_hibernate_enabled` | Включён ли hibernate вместо shutdown. |
+| `cyberpower_ups_cloud_enabled` | Включена ли CyberPower cloud-интеграция. |
+| `cyberpower_ups_power_failure_delay_seconds` | Задержка перед действием при пропадании питания. |
+| `cyberpower_ups_power_failure_script_enabled` | Включён ли запуск скрипта при пропадании питания. |
+| `cyberpower_ups_power_failure_action_info` | Labels с путём скрипта для события пропадания питания. |
+| `cyberpower_ups_power_failure_command_duration_seconds` | Длительность выполнения скрипта при пропадании питания. |
+| `cyberpower_ups_power_failure_shutdown_enabled` | Включён ли shutdown системы при пропадании питания. |
+| `cyberpower_ups_low_battery_runtime_threshold_seconds` | Порог remaining runtime для события low battery. |
+| `cyberpower_ups_low_battery_capacity_threshold_percent` | Порог заряда батареи для события low battery. |
+| `cyberpower_ups_low_battery_script_enabled` | Включён ли запуск скрипта при low battery. |
+| `cyberpower_ups_low_battery_action_info` | Labels с путём скрипта для события low battery. |
+| `cyberpower_ups_low_battery_command_duration_seconds` | Длительность выполнения скрипта при low battery. |
+| `cyberpower_ups_low_battery_shutdown_enabled` | Включён ли shutdown системы при low battery. |
 
 ## Сборка
 
@@ -47,7 +65,9 @@ go build ./cmd/cyberpower-ups-exporter
 
 - адрес прослушивания: `:9833`
 - путь метрик: `/metrics`
-- команда PowerPanel: `pwrstat -status`
+- команда статуса PowerPanel: `pwrstat -status`
+- команда настроек PowerPanel: `pwrstat -config`
+- команда версии PowerPanel: `pwrstat -version`
 - timeout сбора: `5s`
 
 Пример запуска с явными параметрами:
@@ -57,6 +77,8 @@ go build ./cmd/cyberpower-ups-exporter
   --listen-address=:9833 \
   --metrics-path=/metrics \
   --pwrstat-command="pwrstat -status" \
+  --pwrstat-config-command="pwrstat -config" \
+  --pwrstat-version-command="pwrstat -version" \
   --pwrstat-timeout=5s
 ```
 
@@ -83,5 +105,6 @@ go test ./...
 ## Примечания
 
 Экспортёр не обращается к ИБП напрямую. На хосте должен быть установлен
-PowerPanel for Linux, а команда `pwrstat -status` должна работать от имени
-пользователя, под которым запущен экспортёр.
+PowerPanel for Linux, а команды `pwrstat -status`, `pwrstat -config` и
+`pwrstat -version` должны работать от имени пользователя, под которым запущен
+экспортёр.

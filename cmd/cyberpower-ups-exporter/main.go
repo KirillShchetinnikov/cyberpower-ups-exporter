@@ -15,13 +15,15 @@ import (
 	"github.com/KirillShchetinnikov/cyberpower-ups-exporter/internal/exporter"
 )
 
-const version = "1.0.0"
+const version = "1.1.0"
 
 func main() {
 	var (
 		listenAddress = flag.String("listen-address", ":9833", "HTTP listen address")
 		metricsPath   = flag.String("metrics-path", "/metrics", "Prometheus metrics path")
 		pwrstatCmd    = flag.String("pwrstat-command", "pwrstat -status", "PowerPanel command to execute without shell")
+		configCmd     = flag.String("pwrstat-config-command", "pwrstat -config", "PowerPanel config command to execute without shell")
+		versionCmd    = flag.String("pwrstat-version-command", "pwrstat -version", "PowerPanel version command to execute without shell")
 		pwrstatTO     = flag.Duration("pwrstat-timeout", 5*time.Second, "PowerPanel command timeout")
 		showVersion   = flag.Bool("version", false, "Print version and exit")
 	)
@@ -32,7 +34,7 @@ func main() {
 		return
 	}
 
-	scraper := exporter.NewScraper(*pwrstatCmd, *pwrstatTO)
+	scraper := exporter.NewScraper(*pwrstatCmd, *configCmd, *versionCmd, *pwrstatTO)
 	mux := http.NewServeMux()
 	mux.Handle(*metricsPath, exporter.MetricsHandler(scraper))
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -58,7 +60,7 @@ func main() {
 		}
 	}()
 
-	log.Printf("starting cyberpower-ups-exporter version=%s listen=%s metrics_path=%s command=%q", version, *listenAddress, *metricsPath, *pwrstatCmd)
+	log.Printf("starting cyberpower-ups-exporter version=%s listen=%s metrics_path=%s status_command=%q config_command=%q version_command=%q", version, *listenAddress, *metricsPath, *pwrstatCmd, *configCmd, *versionCmd)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("server failed: %v", err)
 	}
